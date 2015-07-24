@@ -1,5 +1,6 @@
 package com.alexlowe.recommendations;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
@@ -11,7 +12,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.alexlowe.recommendations.api.Etsy;
+import com.alexlowe.recommendations.google.GoogleServicesHelper;
 import com.alexlowe.recommendations.model.ActiveListings;
+import com.google.android.gms.plus.PlusOneButton;
 
 //APP NAMERecommendations KEYSTRINGv37j89morzzh57ert0kz4vh6 SHARED SECRET8vysim3s03
 
@@ -22,6 +25,8 @@ public class MainActivity extends ActionBarActivity {
     private RecyclerView recyclerView;
     private View progressBar;
     private TextView error;
+
+    private GoogleServicesHelper helper;
 
     private ListingAdapter adapter;
 
@@ -37,21 +42,39 @@ public class MainActivity extends ActionBarActivity {
         //setup recyclerview
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
         adapter = new ListingAdapter(this);
-        recyclerView.setAdapter(adapter);
+        recyclerView.setAdapter(adapter);   // GSH has to be after adapter, b/c that is our listener for GSH
 
-        if(savedInstanceState == null){
-            showLoading();
-            Etsy.getActiveListings(adapter);
-        }else{
+        helper = new GoogleServicesHelper(this, adapter);
+        showLoading();
+
+        if(savedInstanceState != null){
             if (savedInstanceState.containsKey(STATE_ACTIVE_LISTINGS)) {
                 adapter.success((ActiveListings) savedInstanceState.getParcelable(STATE_ACTIVE_LISTINGS), null);
-                showList();
-            }else {
-                showLoading();
-                Etsy.getActiveListings(adapter);
             }
         }
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        helper.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        helper.disconnect();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        helper.handleActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == ListingAdapter.REQUEST_CODE_PLUS_ONE) {
+            adapter.notifyDataSetChanged();
+        }
     }
 
     @Override

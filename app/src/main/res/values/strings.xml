@@ -3,4 +3,6 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="image_desc">Listing Image</string>
+    <string name="share_desc">Share Button</string>
 </resources>
